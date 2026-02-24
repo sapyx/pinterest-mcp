@@ -1,0 +1,30 @@
+{
+  "name": "pinterest-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Pinterest - catalog and manage pins via Claude",
+  "type": "module",
+  "bin": {
+    "pinterest-mcp": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node build/index.js"
+  },
+  "files": [
+    "build"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.0",
+    "dotenv": "^16.4.0",
+    "open": "^10.0.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
