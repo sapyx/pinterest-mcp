@@ -1,4 +1,4 @@
-# Pinterest MCP Server
+# Boards & Pins MCP Server
 
 An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server that lets Claude interact with Pinterest — browsing, creating, and managing boards, pins, sections, and user profiles via the Pinterest API v5.
 
@@ -19,8 +19,8 @@ An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server that l
 ## Quick Start
 
 ```bash
-git clone https://github.com/sapyx/pinterest-mcp.git
-cd pinterest-mcp
+git clone https://github.com/sapyx/sapyx-mcp.git
+cd sapyx-mcp
 npm install
 npm run build
 ```
