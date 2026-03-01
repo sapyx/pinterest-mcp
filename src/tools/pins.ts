@@ -16,6 +16,7 @@ import {
   fetchImageAsBase64,
 } from "../api.js";
 import type { ImageSizeKey, Pin } from "../types.js";
+import { handleToolError } from "./utils.js";
 
 /** Format a pin summary for listing */
 function formatPinSummary(pin: Pin): string {
@@ -90,8 +91,7 @@ export function registerPinTools(server: McpServer, scopes: Set<string>): void {
 
           return { content: [{ type: "text" as const, text: lines.join("\n") }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error listing pins: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -110,8 +110,7 @@ export function registerPinTools(server: McpServer, scopes: Set<string>): void {
           const pin = await getPin(pin_id);
           return { content: [{ type: "text" as const, text: formatPinDetails(pin) }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error getting pin: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -167,8 +166,7 @@ export function registerPinTools(server: McpServer, scopes: Set<string>): void {
             ],
           };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error fetching pin image: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -205,8 +203,7 @@ export function registerPinTools(server: McpServer, scopes: Set<string>): void {
           const pin = await updatePin(pin_id, update);
           return { content: [{ type: "text" as const, text: `Pin updated successfully:\n${formatPinDetails(pin)}` }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error updating pin: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -232,8 +229,7 @@ export function registerPinTools(server: McpServer, scopes: Set<string>): void {
             content: [{ type: "text" as const, text: `Pin moved to board ${pin.board_id}${pin.board_section_id ? ` / section ${pin.board_section_id}` : ""}.` }],
           };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error moving pin: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -252,8 +248,7 @@ export function registerPinTools(server: McpServer, scopes: Set<string>): void {
           await deletePin(pin_id);
           return { content: [{ type: "text" as const, text: `Pin ${pin_id} deleted successfully.` }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error deleting pin: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -274,8 +269,7 @@ export function registerPinTools(server: McpServer, scopes: Set<string>): void {
           const pin = await savePin(pin_id, board_id, board_section_id);
           return { content: [{ type: "text" as const, text: `Pin saved successfully:\n${formatPinDetails(pin)}` }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error saving pin: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -310,8 +304,7 @@ export function registerPinTools(server: McpServer, scopes: Set<string>): void {
           const pin = await createPin(data as any);
           return { content: [{ type: "text" as const, text: `Pin created successfully:\n${formatPinDetails(pin)}` }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error creating pin: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -350,8 +343,7 @@ export function registerPinTools(server: McpServer, scopes: Set<string>): void {
 
           return { content: [{ type: "text" as const, text: lines.join("\n") }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error getting pin analytics: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );

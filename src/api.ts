@@ -2,7 +2,7 @@
 // Pinterest API v5 — Typed HTTP Client
 // ============================================================
 
-import { getValidAccessToken } from "./auth.js";
+import { getValidAccessToken, AuthRequiredError } from "./auth.js";
 import type {
   Board,
   BoardSection,
@@ -54,6 +54,11 @@ async function pinterestRequest<T>(
   const response = await fetch(url.toString(), options);
 
   if (!response.ok) {
+    // 401 means the token was revoked or is invalid server-side
+    if (response.status === 401) {
+      throw new AuthRequiredError("Pinterest session expired or revoked. Run the pinterest_auth tool to re-authenticate.");
+    }
+
     let errorMessage: string;
     try {
       const errorData = (await response.json()) as PinterestApiError;

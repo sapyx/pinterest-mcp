@@ -12,6 +12,7 @@ import {
   listFollowing,
   getUserAnalytics,
 } from "../api.js";
+import { handleToolError } from "./utils.js";
 
 export function registerSearchTools(server: McpServer, scopes: Set<string>): void {
   const canReadPins = scopes.has("pins:read") || scopes.has("pins:read_secret");
@@ -48,8 +49,7 @@ export function registerSearchTools(server: McpServer, scopes: Set<string>): voi
 
           return { content: [{ type: "text" as const, text: lines.join("\n") }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error searching pins: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -81,8 +81,7 @@ export function registerSearchTools(server: McpServer, scopes: Set<string>): voi
 
           return { content: [{ type: "text" as const, text: lines.join("\n") }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error searching boards: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -111,8 +110,7 @@ export function registerSearchTools(server: McpServer, scopes: Set<string>): voi
 
           return { content: [{ type: "text" as const, text }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error getting user profile: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -142,8 +140,7 @@ export function registerSearchTools(server: McpServer, scopes: Set<string>): voi
 
           return { content: [{ type: "text" as const, text: `Followers (${result.items.length}):\n\n${lines.join("\n")}` }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error listing followers: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -173,8 +170,7 @@ export function registerSearchTools(server: McpServer, scopes: Set<string>): voi
 
           return { content: [{ type: "text" as const, text: `Following (${result.items.length}):\n\n${lines.join("\n")}` }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error listing following: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -224,8 +220,7 @@ export function registerSearchTools(server: McpServer, scopes: Set<string>): voi
 
           return { content: [{ type: "text" as const, text: lines.join("\n") }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error getting user analytics: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );

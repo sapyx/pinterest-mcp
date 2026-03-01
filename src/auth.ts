@@ -289,6 +289,19 @@ async function refreshAccessToken(): Promise<StoredTokens> {
   return newTokens;
 }
 
+// --------------- Auth Required Error ---------------
+
+/**
+ * Thrown whenever the user must re-authenticate.
+ * Caught centrally in api.ts to surface a clear, actionable message.
+ */
+export class AuthRequiredError extends Error {
+  constructor(reason: string) {
+    super(reason);
+    this.name = "AuthRequiredError";
+  }
+}
+
 // --------------- Public API ---------------
 
 /**
@@ -314,7 +327,7 @@ export async function getValidAccessToken(): Promise<string> {
   const tokens = loadTokens();
 
   if (!tokens) {
-    throw new Error("Not authenticated. Use the pinterest_auth tool first, or set PINTEREST_ACCESS_TOKEN env var.");
+    throw new AuthRequiredError("Not authenticated. Run the pinterest_auth tool to connect your Pinterest account.");
   }
 
   // Check if access token is still valid (with buffer)
@@ -324,12 +337,12 @@ export async function getValidAccessToken(): Promise<string> {
 
   // No refresh token — can't refresh
   if (!tokens.refresh_token) {
-    throw new Error("Access token expired and no refresh token available. Generate a new token or use pinterest_auth.");
+    throw new AuthRequiredError("Access token expired and no refresh token available. Run pinterest_auth to re-authenticate.");
   }
 
   // Access token expired — check refresh token
   if (tokens.refresh_token_expires_at < Date.now()) {
-    throw new Error("Refresh token has expired. Please re-authenticate using pinterest_auth.");
+    throw new AuthRequiredError("Session expired. Run the pinterest_auth tool to reconnect your Pinterest account.");
   }
 
   // Refresh the access token

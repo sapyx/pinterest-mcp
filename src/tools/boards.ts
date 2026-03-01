@@ -15,6 +15,7 @@ import {
   updateBoardSection,
   deleteBoardSection,
 } from "../api.js";
+import { handleToolError } from "./utils.js";
 
 export function registerBoardTools(server: McpServer, scopes: Set<string>): void {
   const canRead = scopes.has("boards:read") || scopes.has("boards:read_secret");
@@ -45,7 +46,7 @@ export function registerBoardTools(server: McpServer, scopes: Set<string>): void
           return { content: [{ type: "text" as const, text: lines.join("\n") }] };
         } catch (error) {
           const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error listing boards: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -75,8 +76,7 @@ export function registerBoardTools(server: McpServer, scopes: Set<string>): void
           ].filter(Boolean).join("\n");
           return { content: [{ type: "text" as const, text }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error getting board: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -104,8 +104,7 @@ export function registerBoardTools(server: McpServer, scopes: Set<string>): void
           ].filter(Boolean).join("\n");
           return { content: [{ type: "text" as const, text }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error creating board: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -138,8 +137,7 @@ export function registerBoardTools(server: McpServer, scopes: Set<string>): void
             content: [{ type: "text" as const, text: `Board updated:\n  ID: ${b.id}\n  Name: ${b.name}\n  Privacy: ${b.privacy}` }],
           };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error updating board: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -158,8 +156,7 @@ export function registerBoardTools(server: McpServer, scopes: Set<string>): void
           await deleteBoard(board_id);
           return { content: [{ type: "text" as const, text: `Board ${board_id} deleted successfully.` }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error deleting board: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -188,8 +185,7 @@ export function registerBoardTools(server: McpServer, scopes: Set<string>): void
 
           return { content: [{ type: "text" as const, text: lines.join("\n") }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error listing sections: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -211,8 +207,7 @@ export function registerBoardTools(server: McpServer, scopes: Set<string>): void
             content: [{ type: "text" as const, text: `Section created:\n  ID: ${section.id}\n  Name: ${section.name}` }],
           };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error creating section: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -235,8 +230,7 @@ export function registerBoardTools(server: McpServer, scopes: Set<string>): void
             content: [{ type: "text" as const, text: `Section updated:\n  ID: ${section.id}\n  Name: ${section.name}` }],
           };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error updating section: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
@@ -256,8 +250,7 @@ export function registerBoardTools(server: McpServer, scopes: Set<string>): void
           await deleteBoardSection(board_id, section_id);
           return { content: [{ type: "text" as const, text: `Section ${section_id} deleted successfully.` }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
-          return { content: [{ type: "text" as const, text: `Error deleting section: ${msg}` }], isError: true };
+          return handleToolError(error);
         }
       },
     );
