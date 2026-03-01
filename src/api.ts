@@ -6,12 +6,16 @@ import { getValidAccessToken } from "./auth.js";
 import type {
   Board,
   BoardSection,
+  BoardUpdate,
   CreatePinRequest,
+  FollowerUser,
   PaginatedResponse,
   Pin,
+  PinAnalyticsResponse,
   PinUpdate,
   PinterestApiError,
   UserAccount,
+  UserAnalyticsResponse,
 } from "./types.js";
 
 const API_BASE = "https://api.pinterest.com/v5";
@@ -60,6 +64,11 @@ async function pinterestRequest<T>(
     throw new Error(errorMessage);
   }
 
+  // 204 No Content (e.g. DELETE)
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return (await response.json()) as T;
 }
 
@@ -87,6 +96,10 @@ export async function listBoards(
   return paginatedRequest<Board>("/boards", undefined, pageSize, bookmark);
 }
 
+export async function getBoard(boardId: string): Promise<Board> {
+  return pinterestRequest<Board>("GET", `/boards/${boardId}`);
+}
+
 export async function createBoard(
   name: string,
   description?: string,
@@ -96,6 +109,14 @@ export async function createBoard(
   if (description) body.description = description;
   if (privacy) body.privacy = privacy;
   return pinterestRequest<Board>("POST", "/boards", body);
+}
+
+export async function updateBoard(boardId: string, update: BoardUpdate): Promise<Board> {
+  return pinterestRequest<Board>("PATCH", `/boards/${boardId}`, update as Record<string, unknown>);
+}
+
+export async function deleteBoard(boardId: string): Promise<void> {
+  return pinterestRequest<void>("DELETE", `/boards/${boardId}`);
 }
 
 export async function listBoardSections(
@@ -116,6 +137,18 @@ export async function createBoardSection(
   name: string,
 ): Promise<BoardSection> {
   return pinterestRequest<BoardSection>("POST", `/boards/${boardId}/sections`, { name });
+}
+
+export async function updateBoardSection(
+  boardId: string,
+  sectionId: string,
+  name: string,
+): Promise<BoardSection> {
+  return pinterestRequest<BoardSection>("PATCH", `/boards/${boardId}/sections/${sectionId}`, { name });
+}
+
+export async function deleteBoardSection(boardId: string, sectionId: string): Promise<void> {
+  return pinterestRequest<void>("DELETE", `/boards/${boardId}/sections/${sectionId}`);
 }
 
 // --------------- Pins ---------------
@@ -150,8 +183,35 @@ export async function updatePin(pinId: string, update: PinUpdate): Promise<Pin> 
   return pinterestRequest<Pin>("PATCH", `/pins/${pinId}`, update as Record<string, unknown>);
 }
 
+export async function deletePin(pinId: string): Promise<void> {
+  return pinterestRequest<void>("DELETE", `/pins/${pinId}`);
+}
+
+export async function savePin(
+  pinId: string,
+  boardId: string,
+  boardSectionId?: string,
+): Promise<Pin> {
+  const body: Record<string, unknown> = { board_id: boardId };
+  if (boardSectionId) body.board_section_id = boardSectionId;
+  return pinterestRequest<Pin>("POST", `/pins/${pinId}/save`, body);
+}
+
 export async function createPin(data: CreatePinRequest): Promise<Pin> {
   return pinterestRequest<Pin>("POST", "/pins", data as unknown as Record<string, unknown>);
+}
+
+export async function getPinAnalytics(
+  pinId: string,
+  startDate: string,
+  endDate: string,
+  metricTypes: string[],
+): Promise<PinAnalyticsResponse> {
+  return pinterestRequest<PinAnalyticsResponse>("GET", `/pins/${pinId}/analytics`, undefined, {
+    start_date: startDate,
+    end_date: endDate,
+    metric_types: metricTypes.join(","),
+  });
 }
 
 // --------------- Search ---------------
@@ -165,10 +225,45 @@ export async function searchPins(
   return paginatedRequest<Pin>("/search/pins", params);
 }
 
+export async function searchBoards(
+  query: string,
+  bookmark?: string,
+): Promise<PaginatedResponse<Board>> {
+  const params: Record<string, string> = { query };
+  if (bookmark) params.bookmark = bookmark;
+  return paginatedRequest<Board>("/search/boards", params);
+}
+
 // --------------- User ---------------
 
 export async function getUserAccount(): Promise<UserAccount> {
   return pinterestRequest<UserAccount>("GET", "/user_account");
+}
+
+export async function listFollowers(
+  pageSize?: number,
+  bookmark?: string,
+): Promise<PaginatedResponse<FollowerUser>> {
+  return paginatedRequest<FollowerUser>("/user_account/followers", undefined, pageSize, bookmark);
+}
+
+export async function listFollowing(
+  pageSize?: number,
+  bookmark?: string,
+): Promise<PaginatedResponse<FollowerUser>> {
+  return paginatedRequest<FollowerUser>("/user_account/following", undefined, pageSize, bookmark);
+}
+
+export async function getUserAnalytics(
+  startDate: string,
+  endDate: string,
+  metricTypes: string[],
+): Promise<UserAnalyticsResponse> {
+  return pinterestRequest<UserAnalyticsResponse>("GET", "/user_account/analytics", undefined, {
+    start_date: startDate,
+    end_date: endDate,
+    metric_types: metricTypes.join(","),
+  });
 }
 
 // --------------- Image Fetcher ---------------

@@ -6,147 +6,260 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
   listBoards,
+  getBoard,
   createBoard,
+  updateBoard,
+  deleteBoard,
   listBoardSections,
   createBoardSection,
+  updateBoardSection,
+  deleteBoardSection,
 } from "../api.js";
 
-export function registerBoardTools(server: McpServer): void {
+export function registerBoardTools(server: McpServer, scopes: Set<string>): void {
+  const canRead = scopes.has("boards:read") || scopes.has("boards:read_secret");
+  const canWrite = scopes.has("boards:write") || scopes.has("boards:write_secret");
+
   // --- list_boards ---
-  server.tool(
-    "list_boards",
-    "List all boards for the authenticated Pinterest user.",
-    {
-      page_size: z.number().min(1).max(100).optional().describe("Items per page (1-100, default 25)"),
-      bookmark: z.string().optional().describe("Pagination cursor from previous response"),
-    },
-    async ({ page_size, bookmark }) => {
-      try {
-        const result = await listBoards(page_size, bookmark);
+  if (canRead) {
+    server.tool(
+      "list_boards",
+      "List all boards for the authenticated Pinterest user.",
+      {
+        page_size: z.number().min(1).max(100).optional().describe("Items per page (1-100, default 25)"),
+        bookmark: z.string().optional().describe("Pagination cursor from previous response"),
+      },
+      async ({ page_size, bookmark }) => {
+        try {
+          const result = await listBoards(page_size, bookmark);
 
-        if (result.items.length === 0) {
-          return {
-            content: [{ type: "text" as const, text: "No boards found." }],
-          };
+          if (result.items.length === 0) {
+            return { content: [{ type: "text" as const, text: "No boards found." }] };
+          }
+
+          const lines = result.items.map((b) =>
+            `[${b.id}] ${b.name} (${b.privacy}) — ${b.pin_count} pins`,
+          );
+          if (result.bookmark) lines.push(`\n--- More results. bookmark: "${result.bookmark}" ---`);
+
+          return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return { content: [{ type: "text" as const, text: `Error listing boards: ${msg}` }], isError: true };
         }
+      },
+    );
+  }
 
-        const lines = result.items.map((board) => {
-          const sections = board.pin_count > 0 ? ` — ${board.pin_count} pins` : "";
-          return `[${board.id}] ${board.name} (${board.privacy})${sections}`;
-        });
-
-        if (result.bookmark) {
-          lines.push(`\n--- More results available. Use bookmark: "${result.bookmark}" ---`);
+  // --- get_board ---
+  if (canRead) {
+    server.tool(
+      "get_board",
+      "Get full details of a specific Pinterest board.",
+      {
+        board_id: z.string().describe("Board ID"),
+      },
+      async ({ board_id }) => {
+        try {
+          const b = await getBoard(board_id);
+          const text = [
+            `Board Details:`,
+            `  ID: ${b.id}`,
+            `  Name: ${b.name}`,
+            `  Privacy: ${b.privacy}`,
+            `  Pins: ${b.pin_count}`,
+            `  Followers: ${b.follower_count}`,
+            b.description ? `  Description: ${b.description}` : "",
+            `  Created: ${b.created_at}`,
+            `  Owner: ${b.owner.username}`,
+          ].filter(Boolean).join("\n");
+          return { content: [{ type: "text" as const, text }] };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return { content: [{ type: "text" as const, text: `Error getting board: ${msg}` }], isError: true };
         }
-
-        return {
-          content: [{ type: "text" as const, text: lines.join("\n") }],
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: "text" as const, text: `Error listing boards: ${msg}` }],
-          isError: true,
-        };
-      }
-    },
-  );
+      },
+    );
+  }
 
   // --- create_board ---
-  server.tool(
-    "create_board",
-    "Create a new Pinterest board.",
-    {
-      name: z.string().describe("Board name"),
-      description: z.string().optional().describe("Board description"),
-      privacy: z.enum(["PUBLIC", "SECRET"]).optional().describe("Board privacy (default PUBLIC)"),
-    },
-    async ({ name, description, privacy }) => {
-      try {
-        const board = await createBoard(name, description, privacy);
-        const text = [
-          "Board created successfully:",
-          `  ID: ${board.id}`,
-          `  Name: ${board.name}`,
-          `  Privacy: ${board.privacy}`,
-          board.description ? `  Description: ${board.description}` : "",
-        ].filter(Boolean).join("\n");
+  if (canWrite) {
+    server.tool(
+      "create_board",
+      "Create a new Pinterest board.",
+      {
+        name: z.string().describe("Board name"),
+        description: z.string().optional().describe("Board description"),
+        privacy: z.enum(["PUBLIC", "SECRET"]).optional().describe("Board privacy (default PUBLIC)"),
+      },
+      async ({ name, description, privacy }) => {
+        try {
+          const b = await createBoard(name, description, privacy);
+          const text = [
+            "Board created successfully:",
+            `  ID: ${b.id}`,
+            `  Name: ${b.name}`,
+            `  Privacy: ${b.privacy}`,
+            b.description ? `  Description: ${b.description}` : "",
+          ].filter(Boolean).join("\n");
+          return { content: [{ type: "text" as const, text }] };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return { content: [{ type: "text" as const, text: `Error creating board: ${msg}` }], isError: true };
+        }
+      },
+    );
+  }
 
-        return {
-          content: [{ type: "text" as const, text }],
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: "text" as const, text: `Error creating board: ${msg}` }],
-          isError: true,
-        };
-      }
-    },
-  );
+  // --- update_board ---
+  if (canWrite) {
+    server.tool(
+      "update_board",
+      "Update a board's name, description, or privacy.",
+      {
+        board_id: z.string().describe("Board ID"),
+        name: z.string().optional().describe("New board name"),
+        description: z.string().optional().describe("New description"),
+        privacy: z.enum(["PUBLIC", "SECRET"]).optional().describe("New privacy setting"),
+      },
+      async ({ board_id, name, description, privacy }) => {
+        try {
+          const update: Record<string, string> = {};
+          if (name !== undefined) update.name = name;
+          if (description !== undefined) update.description = description;
+          if (privacy !== undefined) update.privacy = privacy;
+
+          if (Object.keys(update).length === 0) {
+            return { content: [{ type: "text" as const, text: "No fields provided to update." }], isError: true };
+          }
+
+          const b = await updateBoard(board_id, update);
+          return {
+            content: [{ type: "text" as const, text: `Board updated:\n  ID: ${b.id}\n  Name: ${b.name}\n  Privacy: ${b.privacy}` }],
+          };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return { content: [{ type: "text" as const, text: `Error updating board: ${msg}` }], isError: true };
+        }
+      },
+    );
+  }
+
+  // --- delete_board ---
+  if (canWrite) {
+    server.tool(
+      "delete_board",
+      "Permanently delete a Pinterest board and all its pins.",
+      {
+        board_id: z.string().describe("Board ID to delete"),
+      },
+      async ({ board_id }) => {
+        try {
+          await deleteBoard(board_id);
+          return { content: [{ type: "text" as const, text: `Board ${board_id} deleted successfully.` }] };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return { content: [{ type: "text" as const, text: `Error deleting board: ${msg}` }], isError: true };
+        }
+      },
+    );
+  }
 
   // --- list_board_sections ---
-  server.tool(
-    "list_board_sections",
-    "List all sections of a Pinterest board.",
-    {
-      board_id: z.string().describe("Board ID"),
-      page_size: z.number().min(1).max(100).optional().describe("Items per page (1-100, default 25)"),
-      bookmark: z.string().optional().describe("Pagination cursor from previous response"),
-    },
-    async ({ board_id, page_size, bookmark }) => {
-      try {
-        const result = await listBoardSections(board_id, page_size, bookmark);
+  if (canRead) {
+    server.tool(
+      "list_board_sections",
+      "List all sections of a Pinterest board.",
+      {
+        board_id: z.string().describe("Board ID"),
+        page_size: z.number().min(1).max(100).optional().describe("Items per page (1-100, default 25)"),
+        bookmark: z.string().optional().describe("Pagination cursor from previous response"),
+      },
+      async ({ board_id, page_size, bookmark }) => {
+        try {
+          const result = await listBoardSections(board_id, page_size, bookmark);
 
-        if (result.items.length === 0) {
-          return {
-            content: [{ type: "text" as const, text: "No sections found in this board." }],
-          };
+          if (result.items.length === 0) {
+            return { content: [{ type: "text" as const, text: "No sections found in this board." }] };
+          }
+
+          const lines = result.items.map((s) => `[${s.id}] ${s.name}`);
+          if (result.bookmark) lines.push(`\n--- More results. bookmark: "${result.bookmark}" ---`);
+
+          return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return { content: [{ type: "text" as const, text: `Error listing sections: ${msg}` }], isError: true };
         }
-
-        const lines = result.items.map((section) => `[${section.id}] ${section.name}`);
-
-        if (result.bookmark) {
-          lines.push(`\n--- More results available. Use bookmark: "${result.bookmark}" ---`);
-        }
-
-        return {
-          content: [{ type: "text" as const, text: lines.join("\n") }],
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: "text" as const, text: `Error listing sections: ${msg}` }],
-          isError: true,
-        };
-      }
-    },
-  );
+      },
+    );
+  }
 
   // --- create_board_section ---
-  server.tool(
-    "create_board_section",
-    "Create a new section in a Pinterest board.",
-    {
-      board_id: z.string().describe("Board ID"),
-      name: z.string().describe("Section name"),
-    },
-    async ({ board_id, name }) => {
-      try {
-        const section = await createBoardSection(board_id, name);
-        return {
-          content: [{
-            type: "text" as const,
-            text: `Section created successfully:\n  ID: ${section.id}\n  Name: ${section.name}`,
-          }],
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: "text" as const, text: `Error creating section: ${msg}` }],
-          isError: true,
-        };
-      }
-    },
-  );
+  if (canWrite) {
+    server.tool(
+      "create_board_section",
+      "Create a new section in a Pinterest board.",
+      {
+        board_id: z.string().describe("Board ID"),
+        name: z.string().describe("Section name"),
+      },
+      async ({ board_id, name }) => {
+        try {
+          const section = await createBoardSection(board_id, name);
+          return {
+            content: [{ type: "text" as const, text: `Section created:\n  ID: ${section.id}\n  Name: ${section.name}` }],
+          };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return { content: [{ type: "text" as const, text: `Error creating section: ${msg}` }], isError: true };
+        }
+      },
+    );
+  }
+
+  // --- update_board_section ---
+  if (canWrite) {
+    server.tool(
+      "update_board_section",
+      "Rename a section within a Pinterest board.",
+      {
+        board_id: z.string().describe("Board ID"),
+        section_id: z.string().describe("Section ID"),
+        name: z.string().describe("New section name"),
+      },
+      async ({ board_id, section_id, name }) => {
+        try {
+          const section = await updateBoardSection(board_id, section_id, name);
+          return {
+            content: [{ type: "text" as const, text: `Section updated:\n  ID: ${section.id}\n  Name: ${section.name}` }],
+          };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return { content: [{ type: "text" as const, text: `Error updating section: ${msg}` }], isError: true };
+        }
+      },
+    );
+  }
+
+  // --- delete_board_section ---
+  if (canWrite) {
+    server.tool(
+      "delete_board_section",
+      "Delete a section from a Pinterest board.",
+      {
+        board_id: z.string().describe("Board ID"),
+        section_id: z.string().describe("Section ID to delete"),
+      },
+      async ({ board_id, section_id }) => {
+        try {
+          await deleteBoardSection(board_id, section_id);
+          return { content: [{ type: "text" as const, text: `Section ${section_id} deleted successfully.` }] };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return { content: [{ type: "text" as const, text: `Error deleting section: ${msg}` }], isError: true };
+        }
+      },
+    );
+  }
 }

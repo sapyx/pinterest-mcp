@@ -292,6 +292,16 @@ async function refreshAccessToken(): Promise<StoredTokens> {
 // --------------- Public API ---------------
 
 /**
+ * Returns the set of granted OAuth scopes.
+ * Handles both space-separated and comma-separated formats.
+ */
+export function getAvailableScopes(): Set<string> {
+  const tokens = loadTokens();
+  if (!tokens?.scope) return new Set();
+  return new Set(tokens.scope.split(/[\s,]+/).filter(Boolean));
+}
+
+/**
  * Returns a valid access token, refreshing if necessary.
  * Throws if not authenticated or refresh token has expired.
  */

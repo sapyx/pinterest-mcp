@@ -108,6 +108,22 @@ export interface CreatePinRequest {
   board_section_id?: string;
 }
 
+// === Pin Analytics ===
+
+export interface PinDailyMetric {
+  date: string;
+  data_status: string;
+  [metric: string]: string | number;
+}
+
+export interface PinAnalyticsMetric {
+  daily_metrics: PinDailyMetric[];
+  lifetime_metrics: Record<string, number>;
+  summary_metrics: Record<string, number>;
+}
+
+export type PinAnalyticsResponse = Record<string, PinAnalyticsMetric>;
+
 // === Board ===
 
 export interface Board {
@@ -121,6 +137,12 @@ export interface Board {
   created_at: string;
   board_pins_modified_at: string;
   media: { pin_thumbnail_urls: string[] } | null;
+}
+
+export interface BoardUpdate {
+  name?: string;
+  description?: string;
+  privacy?: "PUBLIC" | "SECRET";
 }
 
 export interface BoardSection {
@@ -139,6 +161,31 @@ export interface UserAccount {
   pin_count: number;
   follower_count: number;
   following_count: number;
+}
+
+export interface FollowerUser {
+  username: string;
+  profile_image: string | null;
+  follower_count: number;
+  following_count: number;
+  board_count: number;
+  pin_count: number;
+}
+
+// === User Analytics ===
+
+export interface UserAnalyticsDailyMetric {
+  date: string;
+  data_status: string;
+  [metric: string]: string | number;
+}
+
+export interface UserAnalyticsResponse {
+  all: {
+    daily_metrics: UserAnalyticsDailyMetric[];
+    lifetime_metrics: Record<string, number>;
+    summary_metrics: Record<string, number>;
+  };
 }
 
 // === API Error ===
