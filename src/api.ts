@@ -54,9 +54,23 @@ async function pinterestRequest<T>(
   const response = await fetch(url.toString(), options);
 
   if (!response.ok) {
-    // 401 means the token was revoked or is invalid server-side
     if (response.status === 401) {
-      throw new AuthRequiredError("Pinterest session expired or revoked. Run the pinterest_auth tool to re-authenticate.");
+      // Try to parse Pinterest's error body to distinguish token issues from scope/Trial restrictions.
+      let body: PinterestApiError | null = null;
+      try { body = (await response.json()) as PinterestApiError; } catch { /* ignore */ }
+
+      if (!body) {
+        throw new AuthRequiredError("Pinterest session expired or revoked. Run the pinterest_auth tool to re-authenticate.");
+      }
+
+      // Keywords that indicate the token itself is invalid/expired → need re-auth
+      const isTokenInvalid = /expired|revoked|invalid/i.test(body.message ?? "");
+      if (isTokenInvalid) {
+        throw new AuthRequiredError(`Pinterest session invalid: ${body.message}. Run the pinterest_auth tool to re-authenticate.`);
+      }
+
+      // Other 401s (scope restriction, Trial limitation) → show the actual error
+      throw new Error(`Pinterest API error 401: ${body.message} (code: ${body.code}). This endpoint may not be available in Trial access.`);
     }
 
     let errorMessage: string;
