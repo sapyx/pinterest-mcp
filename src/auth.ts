@@ -120,12 +120,13 @@ async function waitForAuthorizationCode(state: string): Promise<string> {
         return;
       }
 
-      res.writeHead(200, { "Content-Type": "text/html" });
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(`
         <html>
+          <head><meta charset="utf-8"></head>
           <body style="font-family: system-ui; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
             <div style="text-align: center;">
-              <h1 style="color: #E60023;">✓ Pinterest Connected!</h1>
+              <h1 style="color: #E60023;">&#10004; Pinterest Connected!</h1>
               <p>You can close this tab and return to Claude.</p>
             </div>
           </body>
@@ -289,7 +290,30 @@ async function refreshAccessToken(): Promise<StoredTokens> {
   return newTokens;
 }
 
+// --------------- Auth Required Error ---------------
+
+/**
+ * Thrown whenever the user must re-authenticate.
+ * Caught centrally in api.ts to surface a clear, actionable message.
+ */
+export class AuthRequiredError extends Error {
+  constructor(reason: string) {
+    super(reason);
+    this.name = "AuthRequiredError";
+  }
+}
+
 // --------------- Public API ---------------
+
+/**
+ * Returns the set of granted OAuth scopes.
+ * Handles both space-separated and comma-separated formats.
+ */
+export function getAvailableScopes(): Set<string> {
+  const tokens = loadTokens();
+  if (!tokens?.scope) return new Set();
+  return new Set(tokens.scope.split(/[\s,]+/).filter(Boolean));
+}
 
 /**
  * Returns a valid access token, refreshing if necessary.
@@ -304,7 +328,7 @@ export async function getValidAccessToken(): Promise<string> {
   const tokens = loadTokens();
 
   if (!tokens) {
-    throw new Error("Not authenticated. Use the pinterest_auth tool first, or set PINTEREST_ACCESS_TOKEN env var.");
+    throw new AuthRequiredError("Not authenticated. Run the pinterest_auth tool to connect your Pinterest account.");
   }
 
   // Check if access token is still valid (with buffer)
@@ -314,12 +338,12 @@ export async function getValidAccessToken(): Promise<string> {
 
   // No refresh token — can't refresh
   if (!tokens.refresh_token) {
-    throw new Error("Access token expired and no refresh token available. Generate a new token or use pinterest_auth.");
+    throw new AuthRequiredError("Access token expired and no refresh token available. Run pinterest_auth to re-authenticate.");
   }
 
   // Access token expired — check refresh token
   if (tokens.refresh_token_expires_at < Date.now()) {
-    throw new Error("Refresh token has expired. Please re-authenticate using pinterest_auth.");
+    throw new AuthRequiredError("Session expired. Run the pinterest_auth tool to reconnect your Pinterest account.");
   }
 
   // Refresh the access token
