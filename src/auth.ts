@@ -120,12 +120,13 @@ async function waitForAuthorizationCode(state: string): Promise<string> {
         return;
       }
 
-      res.writeHead(200, { "Content-Type": "text/html" });
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(`
         <html>
+          <head><meta charset="utf-8"></head>
           <body style="font-family: system-ui; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
             <div style="text-align: center;">
-              <h1 style="color: #E60023;">✓ Pinterest Connected!</h1>
+              <h1 style="color: #E60023;">&#10004; Pinterest Connected!</h1>
               <p>You can close this tab and return to Claude.</p>
             </div>
           </body>
