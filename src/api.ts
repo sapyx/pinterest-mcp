@@ -18,7 +18,9 @@ import type {
   UserAnalyticsResponse,
 } from "./types.js";
 
-const API_BASE = "https://api.pinterest.com/v5";
+const API_BASE = process.env.PINTEREST_SANDBOX === "true"
+  ? "https://api-sandbox.pinterest.com/v5"
+  : "https://api.pinterest.com/v5";
 
 // --------------- Core Request ---------------
 
