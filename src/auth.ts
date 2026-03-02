@@ -57,7 +57,7 @@ export function loadTokens(): StoredTokens | null {
     return {
       access_token: envToken,
       refresh_token: "",
-      expires_at: Date.now() + 24 * 60 * 60 * 1000, // Assume 24h validity
+      expires_at: Date.now() + 30 * 24 * 60 * 60 * 1000, // Pinterest tokens last 30 days
       refresh_token_expires_at: 0,
       scope: "pins:read,boards:read,user_accounts:read,ads:read,catalogs:read",
     };
