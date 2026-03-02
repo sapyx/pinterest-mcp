@@ -185,13 +185,13 @@ export function registerSearchTools(server: McpServer, scopes: Set<string>): voi
         start_date: z.string().describe("Start date (YYYY-MM-DD)"),
         end_date: z.string().describe("End date (YYYY-MM-DD)"),
         metric_types: z
-          .array(z.enum(["IMPRESSION", "ENGAGEMENTS", "ENGAGEMENT_RATE", "CLICK_THROUGH", "CLICK_THROUGH_RATE", "SAVE", "SAVE_RATE"]))
+          .array(z.enum(["IMPRESSION", "ENGAGEMENT", "ENGAGEMENT_RATE", "OUTBOUND_CLICK", "OUTBOUND_CLICK_RATE", "PIN_CLICK", "PIN_CLICK_RATE", "SAVE", "SAVE_RATE"]))
           .optional()
           .describe("Metrics to retrieve (default: all basic metrics)"),
       },
       async ({ start_date, end_date, metric_types }) => {
         try {
-          const metrics = metric_types ?? ["IMPRESSION", "ENGAGEMENTS", "ENGAGEMENT_RATE", "CLICK_THROUGH", "SAVE"];
+          const metrics = metric_types ?? ["IMPRESSION", "ENGAGEMENT", "ENGAGEMENT_RATE", "OUTBOUND_CLICK", "SAVE"];
           const data = await getUserAnalytics(start_date, end_date, metrics);
 
           const lines: string[] = [`User Analytics — ${start_date} to ${end_date}:`];

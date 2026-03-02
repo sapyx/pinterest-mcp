@@ -320,13 +320,13 @@ export function registerPinTools(server: McpServer, scopes: Set<string>): void {
         start_date: z.string().describe("Start date (YYYY-MM-DD)"),
         end_date: z.string().describe("End date (YYYY-MM-DD)"),
         metric_types: z
-          .array(z.enum(["IMPRESSION", "ENGAGEMENTS", "CLICK_THROUGH", "SAVE", "VIDEO_START", "VIDEO_10S_VIEW", "VIDEO_MRC_VIEW"]))
+          .array(z.enum(["IMPRESSION", "ENGAGEMENT", "OUTBOUND_CLICK", "PIN_CLICK", "SAVE", "VIDEO_START", "VIDEO_10S_VIEW", "VIDEO_MRC_VIEW"]))
           .optional()
           .describe("Metrics to retrieve (default: all basic metrics)"),
       },
       async ({ pin_id, start_date, end_date, metric_types }) => {
         try {
-          const metrics = metric_types ?? ["IMPRESSION", "ENGAGEMENTS", "CLICK_THROUGH", "SAVE"];
+          const metrics = metric_types ?? ["IMPRESSION", "ENGAGEMENT", "OUTBOUND_CLICK", "SAVE"];
           const data = await getPinAnalytics(pin_id, start_date, end_date, metrics);
 
           const lines: string[] = [`Pin Analytics [${pin_id}] — ${start_date} to ${end_date}:`];
