@@ -207,11 +207,10 @@ export function registerSearchTools(server: McpServer, scopes: Set<string>): voi
           if (allData?.daily_metrics?.length > 0) {
             lines.push(`\nDaily breakdown (${allData.daily_metrics.length} days):`);
             for (const day of allData.daily_metrics.slice(0, 7)) {
-              const vals = Object.entries(day)
-                .filter(([k]) => k !== "date" && k !== "data_status")
+              const vals = Object.entries(day.metrics ?? {})
                 .map(([k, v]) => `${k}: ${v}`)
                 .join(", ");
-              lines.push(`  ${day.date}: ${vals}`);
+              lines.push(`  ${day.date}: ${vals || day.data_status}`);
             }
             if (allData.daily_metrics.length > 7) {
               lines.push(`  ... and ${allData.daily_metrics.length - 7} more days`);

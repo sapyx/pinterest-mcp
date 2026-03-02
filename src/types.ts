@@ -177,7 +177,7 @@ export interface FollowerUser {
 export interface UserAnalyticsDailyMetric {
   date: string;
   data_status: string;
-  [metric: string]: string | number;
+  metrics: Record<string, number>;
 }
 
 export interface UserAnalyticsResponse {
