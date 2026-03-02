@@ -31,13 +31,12 @@ if (!hasDirectToken && !hasOAuthCredentials) {
 let scopes: Set<string>;
 
 if (hasDirectToken) {
-  // Direct token: assume standard read-only scopes
-  scopes = new Set([
-    "pins:read",
-    "boards:read",
-    "user_accounts:read",
-  ]);
-  console.error("[init] Direct access token — read-only mode.");
+  // Sandbox tokens have all scopes; plain access tokens are assumed read-only.
+  const isSandbox = process.env.PINTEREST_SANDBOX === "true";
+  scopes = isSandbox
+    ? new Set(["pins:read", "pins:write", "boards:read", "boards:write", "user_accounts:read"])
+    : new Set(["pins:read", "boards:read", "user_accounts:read"]);
+  console.error(`[init] Direct access token — ${isSandbox ? "sandbox (read + write)" : "read-only"} mode.`);
 } else {
   // OAuth: read scopes from stored token file
   scopes = getAvailableScopes();
