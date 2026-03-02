@@ -83,6 +83,18 @@ function saveTokens(tokens: StoredTokens): void {
   console.error("[auth] Tokens saved to", getTokenPath());
 }
 
+function clearTokens(): void {
+  const tokenPath = getTokenPath();
+  try {
+    if (fs.existsSync(tokenPath)) {
+      fs.unlinkSync(tokenPath);
+      console.error("[auth] Expired token file removed. Run pinterest_auth to re-authenticate.");
+    }
+  } catch (err) {
+    console.error("[auth] Failed to remove token file:", err);
+  }
+}
+
 // --------------- OAuth Flow ---------------
 
 /**
@@ -270,7 +282,8 @@ async function refreshAccessToken(): Promise<StoredTokens> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Token refresh failed (${response.status}): ${errorText}`);
+    clearTokens();
+    throw new AuthRequiredError(`Token refresh failed (${response.status}): ${errorText}. Run pinterest_auth to re-authenticate.`);
   }
 
   const data = (await response.json()) as OAuthTokenResponse;
@@ -338,11 +351,13 @@ export async function getValidAccessToken(): Promise<string> {
 
   // No refresh token — can't refresh
   if (!tokens.refresh_token) {
+    clearTokens();
     throw new AuthRequiredError("Access token expired and no refresh token available. Run pinterest_auth to re-authenticate.");
   }
 
   // Access token expired — check refresh token
   if (tokens.refresh_token_expires_at < Date.now()) {
+    clearTokens();
     throw new AuthRequiredError("Session expired. Run the pinterest_auth tool to reconnect your Pinterest account.");
   }
 
