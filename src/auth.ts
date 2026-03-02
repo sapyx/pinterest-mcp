@@ -15,7 +15,7 @@ import type { OAuthTokenResponse, StoredTokens } from "./types.js";
 
 const OAUTH_CALLBACK_PORT = 3333;
 const OAUTH_REDIRECT_URI = `http://localhost:${OAUTH_CALLBACK_PORT}/callback`;
-const OAUTH_SCOPES = "boards:read,boards:write,pins:read,pins:write,user_accounts:read";
+const OAUTH_SCOPES = "boards:read,boards:read_secret,boards:write,boards:write_secret,pins:read,pins:read_secret,pins:write,pins:write_secret,user_accounts:read";
 const PINTEREST_AUTH_URL = "https://www.pinterest.com/oauth/";
 const PINTEREST_TOKEN_URL = "https://api.pinterest.com/v5/oauth/token";
 const TOKEN_EXPIRY_BUFFER_MS = 60_000; // Refresh 60s before actual expiry
