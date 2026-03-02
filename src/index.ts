@@ -15,7 +15,7 @@ import { registerSearchTools } from "./tools/search.js";
 
 // --------------- Validate Environment ---------------
 
-const hasDirectToken = !!process.env.PINTEREST_ACCESS_TOKEN;
+const hasDirectToken = !!process.env.PINTEREST_ACCESS_TOKEN && process.env.PINTEREST_FORCE_OAUTH !== "true";
 const hasOAuthCredentials = !!process.env.PINTEREST_APP_ID && !!process.env.PINTEREST_APP_SECRET;
 
 if (!hasDirectToken && !hasOAuthCredentials) {

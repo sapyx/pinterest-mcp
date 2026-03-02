@@ -50,10 +50,18 @@ function getTokenPath(): string {
   return path.join(getTokenDir(), "pinterest-tokens.json");
 }
 
+/**
+ * Returns true if the direct access token should be used.
+ * Set PINTEREST_FORCE_OAUTH=true to ignore PINTEREST_ACCESS_TOKEN and use OAuth instead.
+ */
+function useDirectToken(): boolean {
+  return !!process.env.PINTEREST_ACCESS_TOKEN && process.env.PINTEREST_FORCE_OAUTH !== "true";
+}
+
 export function loadTokens(): StoredTokens | null {
   // Check for direct access token from environment first
   const envToken = process.env.PINTEREST_ACCESS_TOKEN;
-  if (envToken) {
+  if (useDirectToken() && envToken) {
     return {
       access_token: envToken,
       refresh_token: "",
@@ -334,8 +342,8 @@ export function getAvailableScopes(): Set<string> {
  */
 export async function getValidAccessToken(): Promise<string> {
   // Direct token from environment — no refresh needed
-  if (process.env.PINTEREST_ACCESS_TOKEN) {
-    return process.env.PINTEREST_ACCESS_TOKEN;
+  if (useDirectToken()) {
+    return process.env.PINTEREST_ACCESS_TOKEN!;
   }
 
   const tokens = loadTokens();
